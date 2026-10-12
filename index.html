@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffe2b8">
+<meta property="og:title" content="A little question for Liza 💌">
+<meta property="og:description" content="A tiny game and a tiny question.">
+<title>A little question 💌</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍁</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#ffe2b8; --bg2:#f6b46a; --ink:#3d1f14; --berry:#c4501a; --berry-d:#8c3410;
+    --butter:#ffe08a; --mint:#dbe5b3; --card:#fff6e6; --muted:#855335;
+    --head:'Fredoka','Trebuchet MS',system-ui,sans-serif;
+    --body:'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#26120a; --bg2:#3b1c0e; --ink:#ffe9cf; --berry:#ff9a4d; --berry-d:#d9732a;
+      --butter:#5a4318; --mint:#3c4a22; --card:#3a1d12; --muted:#e0b690; }
+  }
+  *{box-sizing:border-box}
+  button,input,textarea{touch-action:manipulation}
+  button{-webkit-tap-highlight-color:transparent}
+  #stage{-webkit-user-select:none; user-select:none; -webkit-touch-callout:none}
+  html,body{height:100%;margin:0}
+  body{
+    font-family:var(--body); color:var(--ink); line-height:1.5;
+    background:radial-gradient(circle at 20% 10%, var(--bg2), var(--bg) 60%);
+    padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);
+    overflow-x:hidden;
+  }
+  #leaves{position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:0}
+  #leaves span{position:absolute; top:-50px; opacity:.5; animation:leaf linear infinite}
+  @keyframes leaf{
+    0%{transform:translate3d(0,-10vh,0) rotate(0deg)}
+    50%{transform:translate3d(45px,55vh,0) rotate(200deg)}
+    100%{transform:translate3d(-35px,115vh,0) rotate(400deg)}}
+  main{position:relative; z-index:1; min-height:100%; display:flex; align-items:center; justify-content:center; padding:64px 20px 24px}
+  .screen{display:none; width:100%; max-width:520px; text-align:center}
+  .screen.active{display:block}
+  .card{background:var(--card); border-radius:28px; padding:28px 22px; box-shadow:0 6px 0 var(--berry), 0 18px 40px rgba(140,52,16,.22)}
+  h1{font-family:var(--head); font-weight:700; font-size:clamp(2rem,8vw,2.8rem); line-height:1.1; margin:.2em 0 .3em}
+  h2{font-family:var(--head); font-weight:600; font-size:1.5rem; margin:0 0 .4em}
+  p{margin:.4em 0 1em; font-size:1.05rem}
+  .big-emoji{font-size:4.5rem; display:block; animation:bob 2.2s ease-in-out infinite}
+  @keyframes bob{50%{transform:translateY(-8px) rotate(-4deg)}}
+  button{
+    font-family:var(--head); font-weight:600; font-size:1.2rem; cursor:pointer;
+    border:0; border-radius:999px; padding:.7em 1.6em; color:#fff; background:var(--berry);
+    box-shadow:0 5px 0 var(--berry-d); transition:transform .08s, box-shadow .08s;
+  }
+  button:active{transform:translateY(4px); box-shadow:0 1px 0 var(--berry-d)}
+  button:focus-visible,textarea:focus-visible,input:focus-visible{outline:3px solid var(--ink); outline-offset:3px}
+  button.ghost{background:var(--butter); color:var(--ink); box-shadow:0 5px 0 rgba(0,0,0,.15)}
+
+  /* Game */
+  .hud{display:flex; justify-content:space-between; align-items:center; font-family:var(--head); font-size:1.2rem; margin-bottom:10px}
+  .bar{flex:1; height:16px; margin:0 12px; background:var(--card); border-radius:99px; overflow:hidden; box-shadow:inset 0 0 0 2px var(--berry)}
+  .bar i{display:block; height:100%; width:0; background:var(--berry); border-radius:99px; transition:width .25s}
+  #stage{position:relative; height:min(58vh,440px); height:min(58dvh,440px); border-radius:28px; overflow:hidden; touch-action:manipulation;
+    background:linear-gradient(var(--card),var(--butter)); box-shadow:inset 0 0 0 3px var(--berry)}
+  .table-top{position:absolute; height:14px; border-radius:8px; background:#b9774a; box-shadow:0 4px 0 #8f5530}
+  .table-leg{position:absolute; width:12px; background:#8f5530; border-radius:0 0 6px 6px}
+  .item{position:absolute; z-index:2; width:46px; height:46px; font-size:2.3rem; line-height:46px; text-align:center; cursor:pointer;
+    background:none; border:0; border-radius:0; padding:0; box-shadow:none; color:inherit; animation:drop-in .3s}
+  .item:active{transform:none; box-shadow:none}
+  @keyframes drop-in{from{transform:translateY(-30px); opacity:0}}
+  .cat{position:absolute; width:100px; height:92px; pointer-events:none; z-index:1; transition:left .24s ease-out}
+  .cat .flip{width:100%; height:100%}
+  .cat.right .flip{transform:scaleX(-1)}
+  .cat svg{width:100%; height:100%; overflow:visible; display:block}
+  .paw{transform-origin:47px 72px; transform:rotate(8deg)}
+  .cat.swat .paw{animation:swatpaw .45s ease-in-out}
+  @keyframes swatpaw{0%{transform:rotate(8deg)} 28%{transform:rotate(100deg)} 45%{transform:rotate(100deg)} 100%{transform:rotate(8deg)}}
+  .tail{transform-origin:98px 92px; animation:tail 2.4s ease-in-out infinite}
+  @keyframes tail{50%{transform:rotate(14deg)}}
+  .item.taken{transform:scale(1.12)}
+  .fall{position:absolute; left:0; top:0; z-index:3; font-size:2.3rem; line-height:46px; pointer-events:none; z-index:1}
+  .crash{position:absolute; bottom:6px; font-family:var(--head); font-weight:700; color:var(--berry); pointer-events:none; animation:crash .8s forwards}
+  @keyframes crash{to{transform:translateY(-30px) scale(1.3); opacity:0}}
+  .yarn-line{position:absolute; left:0; bottom:18px; height:4px; width:0; background:var(--berry); border-radius:4px; transition:width .9s ease-in; z-index:3}
+  .yarn-ball{position:absolute; left:0; bottom:8px; font-size:2rem; line-height:1; transition:left .9s ease-in; z-index:3}
+  .hint{font-size:.95rem; color:var(--muted); margin-top:10px}
+
+  /* Question */
+  .btns{display:flex; gap:14px; justify-content:center; align-items:center; min-height:84px; margin-top:12px; flex-wrap:wrap}
+  #no{position:relative; background:#fff; color:var(--ink); box-shadow:0 5px 0 rgba(0,0,0,.2); transition:transform .15s, left .15s, top .15s}
+  @media (prefers-color-scheme: dark){ #no{background:#5a3a22} }
+  #yes{font-size:1.4rem}
+  #no{z-index:2}
+  #paws{min-height:1.8em; font-size:1.3rem; letter-spacing:.15em; margin-top:4px}
+
+  /* Yes screen */
+  label{display:block; text-align:left; font-weight:700; margin:12px 0 5px}
+  input[type=date],input[type=time]{display:block; width:100%; text-align:left; font-size:16px; font:inherit; color:inherit; background:var(--card); border:2px solid var(--berry); border-radius:16px; padding:10px 12px; min-height:50px}
+  textarea{width:100%; font:inherit; font-size:16px; color:inherit; background:var(--card); border:2px solid var(--berry); border-radius:16px; padding:12px; resize:vertical; min-height:70px; margin-bottom:12px}
+  .status{font-size:.9rem; color:var(--muted); min-height:1.4em}
+  #mute{position:fixed; top:max(12px,env(safe-area-inset-top)); right:12px; z-index:20; width:46px; height:46px; padding:0; font-size:1.3rem; line-height:1; border-radius:50%; background:var(--card); color:var(--ink); box-shadow:0 3px 0 var(--berry); display:none}
+  #mute.on{display:block}
+  .floaty{position:absolute; z-index:4; font-family:var(--head); font-weight:700; font-size:1.1rem; color:var(--berry-d); background:var(--card); padding:2px 12px; border-radius:99px; box-shadow:0 2px 0 var(--berry); white-space:nowrap; pointer-events:none; animation:floaty .9s ease-out forwards}
+  @keyframes floaty{from{transform:translateY(8px) scale(.8); opacity:0} 20%{transform:none; opacity:1} to{transform:translateY(-36px); opacity:0}}
+  .stats{list-style:none; padding:0; margin:14px 0; text-align:left}
+  .stats li{display:flex; justify-content:space-between; gap:12px; padding:10px 14px; margin-bottom:8px; border-radius:16px; background:var(--mint); font-weight:700}
+  .stats li:nth-child(even){background:var(--butter)}
+  .stats b{font-family:var(--head); font-weight:600}
+  .ticket{max-width:360px; margin:0 auto; background:var(--butter); border:3px solid var(--berry); border-radius:22px; overflow:hidden; text-align:center; box-shadow:0 6px 0 var(--berry-d), 0 18px 40px rgba(140,52,16,.22)}
+  .tk-head{background:var(--berry); color:#fff; font-family:var(--head); font-weight:600; padding:10px 14px; font-size:1.05rem}
+  .tk-body{padding:18px 18px 12px}
+  .tk-admit{font-family:var(--head); font-weight:700; font-size:clamp(2.4rem,12vw,3.2rem); line-height:1}
+  .tk-names{font-family:var(--head); font-size:1.25rem; margin:8px 0 14px}
+  .tk-rows{margin:0; text-align:left}
+  .tk-rows div{display:flex; justify-content:space-between; gap:12px; padding:9px 0; border-top:2px dotted var(--berry)}
+  .tk-rows dt{font-weight:700; color:var(--muted)}
+  .tk-rows dd{margin:0; font-family:var(--head); font-weight:600; text-align:right}
+  .tk-stub{border-top:3px dashed var(--berry); padding:12px; font-weight:700; background:var(--card)}
+  canvas#confetti{position:fixed; inset:0; pointer-events:none; z-index:10}
+  @media (prefers-reduced-motion: reduce){ #leaves{display:none} .big-emoji{animation:none} .item,.tail{animation:none} }
+</style>
+</head>
+<body>
+<div id="leaves" aria-hidden="true"></div>
+<canvas id="confetti"></canvas>
+<button id="mute" type="button" aria-label="Turn music off">🔊</button>
+<main>
+
+  <!-- 1. Intro -->
+  <section class="screen active" id="intro">
+    <div class="card">
+      <span class="big-emoji">🐱</span>
+      <h1>Hi <span class="to-name">you</span>!</h1>
+      <p>I made you a tiny game and a tiny question.<br>A cat is involved.</p>
+      <button id="start">Play</button>
+    </div>
+  </section>
+
+  <!-- 2. Game -->
+  <section class="screen" id="game">
+    <div class="hud"><span>🐱</span><div class="bar"><i id="fill"></i></div><span id="count">0/8</span></div>
+    <div id="stage" aria-label="Cat knocking things off a table"></div>
+    <p class="hint">Tap things on the table so the cat knocks them off. Tap fast for combos, the yarn 🧶 counts double, and the cat likes being tapped too.</p>
+  </section>
+
+  <!-- 2b. Chaos report -->
+  <section class="screen" id="report">
+    <div class="card">
+      <span class="big-emoji">😼</span>
+      <h1>Chaos report</h1>
+      <ul class="stats" id="stats"></ul>
+      <p id="verdict"></p>
+      <button id="toAsk">Continue</button>
+    </div>
+  </section>
+
+  <!-- 3. Question -->
+  <section class="screen" id="ask">
+    <div class="card">
+      <span class="big-emoji">😽</span>
+      <h1 id="askTitle">Will you go on a date with me?</h1>
+      <p id="askSub" aria-live="polite">You helped the cat cause chaos, so I have to ask.</p>
+      <div class="btns" id="btns">
+        <button id="yes">Yes! 🐾</button>
+        <button id="no">No</button>
+      </div>
+      <div id="paws" aria-hidden="true"></div>
+    </div>
+  </section>
+
+  <!-- 4a. Yes: pick a date and time -->
+  <section class="screen" id="yesScreen">
+    <div class="card">
+      <span class="big-emoji">🎉</span>
+      <h1>Yay!!</h1>
+      <p>I'm so happy! I'll plan everything. All I need is a day and time that work for you.</p>
+      <label for="whenDate">Day that works</label>
+      <input type="date" id="whenDate">
+      <label for="whenTime">Time that works</label>
+      <input type="time" id="whenTime">
+      <label for="note">Other days, allergies, anything I should know?</label>
+      <textarea id="note" placeholder="Optional"></textarea>
+      <button id="send">Send my answer 💌</button>
+      <div class="status" id="status"></div>
+    </div>
+  </section>
+
+  <!-- 4a-2. Ticket -->
+  <section class="screen" id="ticketScreen">
+    <div class="ticket" id="ticket">
+      <div class="tk-head">🎬 One date only</div>
+      <div class="tk-body">
+        <div class="tk-admit">Admit two</div>
+        <div class="tk-names"><span class="to-name">Liza</span> &amp; <span id="tkYou"></span></div>
+        <dl class="tk-rows">
+          <div><dt>Day</dt><dd id="tkDay"></dd></div>
+          <div><dt>Time</dt><dd id="tkTime"></dd></div>
+          <div><dt>Where</dt><dd>A surprise 🤫</dd></div>
+        </dl>
+      </div>
+      <div class="tk-stub">Rated V for very cute 🐾</div>
+    </div>
+    <p class="hint">Screenshot this to keep it. I'll plan the rest.</p>
+  </section>
+
+  <!-- 4b. No -->
+  <section class="screen" id="noScreen">
+    <div class="card">
+      <span class="big-emoji">🫶</span>
+      <h1>Thanks for being honest</h1>
+      <p>I really appreciate that. No hard feelings, and I'm still glad I asked.</p>
+      <textarea id="noNote" placeholder="Want to tell me anything? (optional)"></textarea>
+      <button id="sendNo" class="ghost">Send</button>
+      <div class="status" id="statusNo"></div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+/* ============================================================
+   EDIT THIS PART
+   ============================================================ */
+const CONFIG = {
+  theirName: "Liza",            // their name
+  yourName:  "Ani",             // your name
+  musicFile: "silly-cat.mp3",               // your audio file, uploaded next to index.html, e.g. "music.mp3". Blank = no music
+  itemsToKnock: 8,             // how many points the cat needs
+  shelfItems: ['📚','📕','📗','🧸','🪴','🎃','🍿','🎬','🎞️','📼','📦'],   // swap in emojis of things she loves (nothing breakable!)
+
+  /* HOW YOU RECEIVE THE ANSWER (pick one or both; leave blank to skip)
+     A) Web3Forms: emails you each response. Free, ~2 min setup, easiest. */
+  web3formsKey: "",             // paste your access key from web3forms.com
+
+  /* B) Google Form: responses land in a Google Sheet. */
+  googleFormUrl: "",            // ends in /formResponse
+  googleEntryIds: {             // the entry.XXXX ids from your form
+    answer: "",
+    note:   "",
+    nopeTries: "",
+    date:   "",
+    time:   "",
+    device: ""                  // optional: lets you tell different people's responses apart
+  }
+};
+/* ============================================================ */
+
+const $ = id => document.getElementById(id);
+const show = id => { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); $(id).classList.add('active'); window.scrollTo(0,0); };
+document.querySelectorAll('.to-name').forEach(el => el.textContent = CONFIG.theirName);
+document.title = `A little question for ${CONFIG.theirName} 💌`;
+
+/* ---------- Game: help the cat knock things off the table ---------- */
+let knocked = 0, spawner = null, playing = false, rafId = null;
+let items = 0, yarns = 0, combo = 0, bestCombo = 0, lastTap = 0, gameStart = 0;
+let slots = [], falling = [], tableTop = 0, catEl = null;
+const stage = $('stage');
+const STUFF = CONFIG.shelfItems;
+const CRASH = ['crash!','clink!','oops!','*thud*','meow!'];
+
+function setProgress(){
+  const g = CONFIG.itemsToKnock;
+  $('count').textContent = `${Math.min(knocked,g)}/${g}`;
+  $('fill').style.width = Math.min(100, knocked / g * 100) + '%';
+}
+const CAT_SVG = `
+<svg viewBox="0 0 120 110" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path class="tail" d="M98 92 C124 92 126 60 108 50" stroke="#f4a259" stroke-width="10" fill="none" stroke-linecap="round"/>
+  <path d="M110 53 q-3 -3 -4 -6" stroke="#d9822b" stroke-width="10" fill="none" stroke-linecap="round" class="tail"/>
+  <ellipse cx="72" cy="78" rx="34" ry="30" fill="#f4a259" stroke="#b05f1f" stroke-width="2"/>
+  <ellipse cx="88" cy="94" rx="20" ry="16" fill="#e8913f"/>
+  <path d="M80 50 q5 8 0 15 M92 54 q5 8 0 15" stroke="#d9822b" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+  <path d="M16 32 L16 6 L36 21 Z" fill="#f4a259" stroke="#b05f1f" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M60 32 L60 6 L40 21 Z" fill="#f4a259" stroke="#b05f1f" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M21 26 L21 14 L30 21 Z" fill="#ffb3c7"/>
+  <path d="M55 26 L55 14 L46 21 Z" fill="#ffb3c7"/>
+  <circle cx="38" cy="46" r="26" fill="#f4a259" stroke="#b05f1f" stroke-width="2"/>
+  <path d="M38 21 v8 M31 22 l2 7 M45 22 l-2 7" stroke="#d9822b" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="22" cy="56" r="4.5" fill="#ff9fb8" opacity=".55"/>
+  <circle cx="54" cy="56" r="4.5" fill="#ff9fb8" opacity=".55"/>
+  <ellipse cx="32" cy="60" rx="8" ry="6" fill="#ffe0b8"/>
+  <ellipse cx="44" cy="60" rx="8" ry="6" fill="#ffe0b8"/>
+  <ellipse cx="28" cy="46" rx="3.3" ry="4.4" fill="#3b1d33"/><circle cx="29.2" cy="44.6" r="1.2" fill="#fff"/>
+  <ellipse cx="48" cy="46" rx="3.3" ry="4.4" fill="#3b1d33"/><circle cx="49.2" cy="44.6" r="1.2" fill="#fff"/>
+  <path d="M34.5 54.5 h7 l-3.5 4.5 z" fill="#ff8fab"/>
+  <path d="M38 59 q-2 4 -6 3 M38 59 q2 4 6 3" stroke="#3b1d33" fill="none" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M24 57 L7 53 M24 61 L7 64 M52 57 L69 53 M52 61 L69 64" stroke="#3b1d33" stroke-width="1.2" stroke-linecap="round"/>
+  <g class="paw">
+    <rect x="40" y="70" width="14" height="38" rx="7" fill="#f4a259" stroke="#b05f1f" stroke-width="2"/>
+    <ellipse cx="47" cy="104" rx="9" ry="8" fill="#ffe0b8"/>
+    <circle cx="44" cy="103" r="1.8" fill="#ffb3c7"/><circle cx="50" cy="103" r="1.8" fill="#ffb3c7"/>
+  </g>
+</svg>`;
+
+function buildStage(){
+  stage.innerHTML = '';
+  const w = stage.clientWidth, h = stage.clientHeight;
+  tableTop = Math.round(h * 0.62);
+  const top = document.createElement('div');
+  top.className = 'table-top';
+  top.style.cssText = `left:4%;right:4%;top:${tableTop}px`;
+  stage.appendChild(top);
+  [8, 90].forEach(p => {
+    const l = document.createElement('div');
+    l.className = 'table-leg';
+    l.style.cssText = `left:${p}%;top:${tableTop + 14}px;bottom:0`;
+    stage.appendChild(l);
+  });
+  catEl = document.createElement('div');
+  catEl.className = 'cat';
+  catEl.innerHTML = '<div class="flip">' + CAT_SVG + '</div>';
+  catEl.style.top = (tableTop - 92) + 'px';
+  catEl.style.left = (w - 120) + 'px';
+  catEl.style.pointerEvents = 'auto';
+  catEl.addEventListener('pointerdown', e => {
+    e.preventDefault(); SFX.meow(1.1);
+    catEl.classList.remove('swat'); void catEl.offsetWidth; catEl.classList.add('swat');
+  });
+  stage.appendChild(catEl);
+  const n = 5, margin = w * 0.12;
+  slots = Array.from({length:n}, (_, i) => ({ x: margin + i * (w - 2*margin) / (n - 1) - 23, el: null, busy: false }));
+  falling = [];
+  queue = Promise.resolve();
+}
+function spawn(){
+  if(!playing) return;
+  const free = slots.filter(s => !s.el && !s.busy);
+  if(!free.length) return;
+  const slot = free[Math.floor(Math.random() * free.length)];
+  const yarn = Math.random() < 0.2;
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'item';
+  b.textContent = yarn ? '🧶' : STUFF[Math.floor(Math.random() * STUFF.length)];
+  b.setAttribute('aria-label', yarn ? 'yarn ball, worth two' : 'thing on the table');
+  b.style.left = slot.x + 'px';
+  b.style.top = (tableTop - 46) + 'px';
+  slot.el = b;
+  b.addEventListener('pointerdown', e => { e.preventDefault(); knock(slot, b, yarn); });
+  stage.appendChild(b);
+}
+
+/* Taps queue up, so the cat walks over, swings its paw, and the item goes flying. */
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+let queue = Promise.resolve();
+function knock(slot, b, yarn){
+  if(!playing || b.dataset.taken) return;
+  b.dataset.taken = 1; b.classList.add('taken'); slot.busy = true;
+  SFX.unlock();
+  const now = performance.now();
+  combo = (lastTap && now - lastTap < 1500) ? combo + 1 : 1;     // quick taps build a combo
+  lastTap = now; bestCombo = Math.max(bestCombo, combo);
+  b.dataset.combo = combo;
+  queue = queue.then(() => swat(slot, b, yarn));
+}
+async function swat(slot, b, yarn){
+  if(!playing) return;
+  const w = stage.clientWidth;
+  const flipped = slot.x + 23 > w / 2;            // item in the right half: cat stands on its left
+  catEl.classList.toggle('right', flipped);
+  catEl.style.left = (flipped ? slot.x - 79 : slot.x + 25) + 'px';
+  await sleep(260);                                // cat walks over
+  catEl.classList.remove('swat'); void catEl.offsetWidth; catEl.classList.add('swat');
+  SFX.meow(yarn ? 1.35 : 1);
+  await sleep(130);                                // paw reaches the item
+  launch(slot, b, yarn, flipped ? 1 : -1);
+  await sleep(320);                                // paw swings back
+}
+function launch(slot, b, yarn, dir){
+  slot.el = null; slot.busy = false;
+  const f = document.createElement('div');
+  f.className = 'fall'; f.textContent = b.textContent;
+  stage.appendChild(f);
+  b.remove();
+  falling.push({ el:f, x:slot.x, y:tableTop - 46, vx:dir * (2.5 + Math.random()*2), vy:-3 - Math.random()*2, r:0, vr:dir * (6 + Math.random()*10) });
+  if(!rafId) rafId = requestAnimationFrame(physics);
+  const c = +b.dataset.combo || 1, bonus = (c === 3 || c === 5) ? 1 : 0;   // bonus point at combo x3 and x5
+  items++; if(yarn) yarns++;
+  knocked += (yarn ? 2 : 1) + bonus;
+  let text = yarn ? '🧶 ZOOM! +2' : '';
+  if(c >= 2) text += (text ? '  ' : '') + (c >= 5 ? 'Zoomies' : 'Combo') + ' x' + c + (bonus ? ' +1' : '');
+  if(text) floaty(text, slot.x);
+  setProgress();
+  if(knocked >= CONFIG.itemsToKnock && playing) win();
+}
+function floaty(text, x){
+  const el = document.createElement('div');
+  el.className = 'floaty'; el.textContent = text;
+  el.style.left = Math.max(4, Math.min(stage.clientWidth - 150, x - 40)) + 'px';
+  el.style.top = (tableTop - 84) + 'px';
+  stage.appendChild(el);
+  setTimeout(() => el.remove(), 900);
+}
+function physics(){
+  const h = stage.clientHeight;
+  falling = falling.filter(f => {
+    f.vy += .6; f.x += f.vx; f.y += f.vy; f.r += f.vr;
+    f.el.style.transform = `translate(${f.x}px,${f.y}px) rotate(${f.r}deg)`;
+    if(f.y > h - 30){
+      const c = document.createElement('div');
+      c.className = 'crash';
+      c.textContent = CRASH[Math.floor(Math.random() * CRASH.length)];
+      c.style.left = Math.max(6, Math.min(stage.clientWidth - 70, f.x)) + 'px';
+      stage.appendChild(c);
+      setTimeout(() => c.remove(), 800);
+      f.el.remove();
+      return false;
+    }
+    return true;
+  });
+  rafId = falling.length ? requestAnimationFrame(physics) : null;
+}
+function startGame(){
+  clearInterval(spawner);
+  show('game');
+  buildStage();
+  knocked = 0; items = 0; yarns = 0; combo = 0; bestCombo = 0; lastTap = 0; gameStart = performance.now();
+  playing = true; setProgress();
+  spawn(); spawn(); spawn();
+  spawner = setInterval(spawn, 900);
+}
+function win(){
+  playing = false; clearInterval(spawner);
+  burst(60);
+  // the yarn rolls across the stage and leaves a thread behind
+  const line = document.createElement('div'); line.className = 'yarn-line';
+  const ball = document.createElement('div'); ball.className = 'yarn-ball'; ball.textContent = '🧶';
+  stage.append(line, ball);
+  requestAnimationFrame(() => requestAnimationFrame(() => { line.style.width = '100%'; ball.style.left = 'calc(100% - 36px)'; }));
+  setTimeout(showReport, 1200);
+}
+function showReport(){
+  const secs = Math.round((performance.now() - gameStart) / 1000);
+  const stars = secs <= 15 ? 3 : secs <= 25 ? 2 : 1;
+  const verdict = {3:'Certified menace. The cat is very proud.', 2:'Solid destruction. The cat approves.', 1:'Slow and steady. The cat respects it.'};
+  const rows = [['Things knocked off', items], ['Yarn balls', yarns], ['Best combo', 'x' + bestCombo], ['Time', secs + 's'], ['Cat approval', '⭐'.repeat(stars)]];
+  $('stats').innerHTML = rows.map(r => `<li><span>${r[0]}</span><b>${r[1]}</b></li>`).join('');
+  $('verdict').textContent = verdict[stars];
+  show('report');
+}
+$('toAsk').onclick = () => show('ask');
+function showTicket(extra){
+  extra = extra || {};
+  $('tkYou').textContent = CONFIG.yourName;
+  $('tkDay').textContent = extra.date || 'To be decided';
+  $('tkTime').textContent = extra.time || 'To be decided';
+  show('ticketScreen'); burst(80);
+}
+$('start').onclick = () => { SFX.unlock(); Music.start(); startGame(); };
+
+/* ---------- The Yes / No question ---------- */
+/* Saying No takes several taps. Each tap asks a question and shows a paw counter,
+   so it's clear she has to keep tapping (and isn't just failing to hit the button). */
+let nopeTries = 0;
+const NO_TAPS = 3;                         // taps needed to actually say no
+const noBtn = $('no'), yesBtn = $('yes');
+const nopeLines = [
+  "Are you sure? 🥺", "The cat is judging you 🐱"
+];
+
+function renderPaws(){
+  $('paws').innerHTML = '<span>' + '🐾'.repeat(nopeTries) + '</span><span style="opacity:.3">' + '🐾'.repeat(NO_TAPS - nopeTries) + '</span>';
+}
+noBtn.addEventListener('click', e => {
+  e.preventDefault();
+  nopeTries++;
+  if(nopeTries >= NO_TAPS){ answer('no'); return; }
+  const left = NO_TAPS - nopeTries;
+  $('askTitle').textContent = nopeLines[Math.min(nopeTries - 1, nopeLines.length - 1)];
+  renderPaws();
+  yesBtn.style.transform = `scale(${Math.min(1.4, 1 + nopeTries * 0.1)})`;
+  if(left === 1){
+    $('askSub').textContent = "Okay, last one. Tap No once more if you really mean it.";
+    noBtn.style.left = noBtn.style.top = '0px';
+    noBtn.textContent = "No, sorry";
+  } else {
+    $('askSub').textContent = `Still a no? Keep tapping No, ${left} more times to be sure.`;
+    const range = Math.min(window.innerWidth, 520) / 2 - 90;
+    const old = parseFloat(noBtn.style.left) || 0, pad = 12;
+    let nl = Math.random() * range * 2 - range;
+    const r = noBtn.getBoundingClientRect(), d = nl - old;
+    if(r.left + d < pad) nl += pad - (r.left + d);
+    else if(r.right + d > window.innerWidth - pad) nl -= (r.right + d) - (window.innerWidth - pad);
+    noBtn.style.left = nl + 'px';
+    noBtn.style.top  = (Math.random() * 60 - 30) + 'px';
+  }
+});
+yesBtn.onclick = () => answer('yes');
+
+function answer(a){
+  if(a === 'yes'){ show('yesScreen'); burst(160); sendResponse('YES', '', 'statusYesAuto'); }
+  else { show('noScreen'); sendResponse('NO', '', 'statusNoAuto'); }
+}
+
+function esc(t){ const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
+
+/* ---------- Sending the response to you ---------- */
+/* Basic info that lets you tell one person's responses from another's. */
+function meta(){
+  let id = '';
+  try{ id = localStorage.getItem('vid'); if(!id){ id = Math.random().toString(36).slice(2, 8); localStorage.setItem('vid', id); } }
+  catch(e){ id = '(unavailable)'; }
+  return {
+    visitor_id: id,                                   // same id = same phone/browser
+    sent_at: new Date().toLocaleString('en-CA', {dateStyle:'medium', timeStyle:'short'}),
+    device: (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '',
+    browser: navigator.userAgent,
+    screen: screen.width + 'x' + screen.height,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    language: navigator.language,
+    link_tag: new URLSearchParams(location.search).get('ref') || ''
+  };
+}
+async function sendResponse(ans, note, extra){
+  extra = extra || {};
+  const msgs = [];
+  if(CONFIG.web3formsKey){
+    try{
+      const r = await fetch('https://api.web3forms.com/submit', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','Accept':'application/json'},
+        body: JSON.stringify({
+          access_key: CONFIG.web3formsKey,
+          subject: `${CONFIG.theirName} answered: ${ans}`,
+          from_name: 'Date invite site',
+          answer: ans, preferred_date: extra.date || '(not picked)', preferred_time: extra.time || '(not picked)', note: note || '(no note)', times_they_tried_to_click_no: nopeTries, ...meta()
+        })
+      });
+      msgs.push(r.ok);
+    }catch(e){ msgs.push(false); }
+  }
+  if(CONFIG.googleFormUrl){
+    try{
+      const fd = new FormData();
+      const ids = CONFIG.googleEntryIds;
+      if(ids.answer)    fd.append(ids.answer, ans);
+      if(ids.note)      fd.append(ids.note, note || '');
+      if(ids.nopeTries) fd.append(ids.nopeTries, nopeTries);
+      if(ids.date)      fd.append(ids.date, extra.date || '');
+      if(ids.time)      fd.append(ids.time, extra.time || '');
+      if(ids.device){ const m = meta(); fd.append(ids.device, m.visitor_id + ' | ' + m.device + ' | ' + m.sent_at); }
+      await fetch(CONFIG.googleFormUrl, {method:'POST', mode:'no-cors', body: fd});
+      msgs.push(true);   // no-cors gives no readable result, so assume it worked
+    }catch(e){ msgs.push(false); }
+  }
+  return msgs.length === 0 || msgs.some(Boolean);
+}
+
+/* The note buttons send a second message that includes the note. */
+function prettyDate(v){
+  if(!v) return '';
+  const d = new Date(v + 'T12:00:00');
+  return isNaN(d) ? v : d.toLocaleDateString('en-CA', {weekday:'long', month:'long', day:'numeric'});
+}
+function prettyTime(v){
+  if(!v) return '';
+  const [h, m] = v.split(':').map(Number);
+  return ((h % 12) || 12) + ':' + String(m).padStart(2, '0') + ' ' + (h < 12 ? 'AM' : 'PM');
+}
+(function(){ // can't pick a day in the past
+  const t = new Date(); t.setMinutes(t.getMinutes() - t.getTimezoneOffset());
+  $('whenDate').min = t.toISOString().slice(0, 10);
+})();
+
+async function sendNote(ans, noteId, btn, statusEl, extra){
+  extra = extra || {};
+  const note = $(noteId).value.trim();
+  if(ans === 'YES' && !extra.date && !extra.time && !note){
+    statusEl.textContent = 'Pick a day and time first, so I can plan around it 🍂';
+    return;
+  }
+  btn.disabled = true; statusEl.textContent = 'Sending…';
+  const ok = await sendResponse(ans + ' (with details)', note, extra);
+  statusEl.textContent = ok ? 'Sent! Thank you 💗' : "Hmm, that didn't send. Try screenshotting this and texting me 🙈";
+  if(!ok) btn.disabled = false;
+  if(ok && ans === 'YES') setTimeout(() => showTicket(extra), 900);
+}
+$('send').onclick   = () => sendNote('YES', 'note', $('send'), $('status'),
+                        { date: prettyDate($('whenDate').value), time: prettyTime($('whenTime').value) });
+$('sendNo').onclick = () => sendNote('NO',  'noNote', $('sendNo'), $('statusNo'));
+
+/* ---------- Sound: synthesized meows + optional music file. One button mutes both. ---------- */
+const Sound = { on: true };
+const SFX = (() => {
+  let ctx = null;
+  function ac(){
+    if(!ctx){ const C = window.AudioContext || window.webkitAudioContext; if(!C) return null; ctx = new C(); }
+    if(ctx.state !== 'running') ctx.resume();      // iPhones need this inside a tap
+    return ctx;
+  }
+  function meow(pitch){
+    if(!Sound.on) return;
+    const c = ac(); if(!c) return;
+    const t = c.currentTime, p = (pitch || 1) * (0.92 + Math.random() * 0.2);
+    const dur = 0.5 + Math.random() * 0.12, base = 470 * p;
+    const o = c.createOscillator(), f = c.createBiquadFilter(), g = c.createGain();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(base, t);
+    o.frequency.linearRampToValueAtTime(base * 1.9, t + dur * 0.35);
+    o.frequency.linearRampToValueAtTime(base * 1.05, t + dur);
+    f.type = 'bandpass'; f.Q.value = 4;
+    f.frequency.setValueAtTime(900, t);
+    f.frequency.linearRampToValueAtTime(2200, t + dur * 0.4);
+    f.frequency.linearRampToValueAtTime(1000, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.4, t + 0.06);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(f); f.connect(g); g.connect(c.destination);
+    o.start(t); o.stop(t + dur + 0.05);
+  }
+  return { unlock(){ ac(); }, meow };
+})();
+
+const Music = (() => {
+  const btn = $('mute');
+  let audio = null;
+  function sync(){
+    btn.textContent = Sound.on ? '🔊' : '🔇';
+    btn.setAttribute('aria-label', Sound.on ? 'Turn sound off' : 'Turn sound on');
+    if(audio){ if(Sound.on) audio.play().catch(() => {}); else audio.pause(); }
+  }
+  btn.onclick = () => { Sound.on = !Sound.on; sync(); };
+  document.addEventListener('visibilitychange', () => {
+    if(!audio) return;
+    if(document.hidden) audio.pause(); else if(Sound.on) audio.play().catch(() => {});
+  });
+  return { start(){
+    btn.classList.add('on');
+    if(CONFIG.musicFile && !audio){ audio = new Audio(CONFIG.musicFile); audio.loop = true; audio.volume = 0.5; }
+    sync();
+  } };
+})();
+
+/* ---------- Falling leaves ---------- */
+(function(){
+  const box = $('leaves'), kinds = ['🍂','🍁','🍂','🍃'];
+  for(let i = 0; i < 14; i++){
+    const l = document.createElement('span');
+    l.textContent = kinds[i % kinds.length];
+    l.style.left = (Math.random() * 100) + '%';
+    l.style.fontSize = (16 + Math.random() * 18) + 'px';
+    l.style.animationDuration = (11 + Math.random() * 10) + 's';
+    l.style.animationDelay = (-Math.random() * 20) + 's';
+    box.appendChild(l);
+  }
+})();
+
+/* ---------- Confetti ---------- */
+const cv = $('confetti'), cx = cv.getContext('2d');
+let bits = [], raf = null;
+function sizeCv(){ cv.width = innerWidth; cv.height = innerHeight; }
+addEventListener('resize', sizeCv); sizeCv();
+function burst(n){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const em = ['🐱','🧶','🍁','🐾','🍂','🎃'];
+  for(let i=0;i<n;i++) bits.push({
+    x: innerWidth/2, y: innerHeight*0.55,
+    vx:(Math.random()-.5)*14, vy:-Math.random()*14-4,
+    s:16+Math.random()*16, e:em[i%em.length], life:110+Math.random()*40
+  });
+  if(!raf) raf = requestAnimationFrame(tick);
+}
+function tick(){
+  cx.clearRect(0,0,cv.width,cv.height);
+  bits = bits.filter(b => b.life-- > 0);
+  bits.forEach(b => { b.vy += .35; b.x += b.vx; b.y += b.vy; cx.font = b.s+'px serif'; cx.fillText(b.e, b.x, b.y); });
+  raf = bits.length ? requestAnimationFrame(tick) : null;
+}
+</script>
+</body>
+</html>
